@@ -1,9 +1,8 @@
-import { Configuration, OpenAIApi } from 'openai';
+import OpenAI from 'openai';
 
-const configuration = new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-const openai = new OpenAIApi(configuration);
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
@@ -11,7 +10,7 @@ export default async function handler(req, res) {
     console.log('Received query:', query);
 
     try {
-      const completion = await openai.createChatCompletion({
+      const completion = await openai.chat.completions.create({
         model: "gpt-3.5-turbo",
         messages: [
           { role: "system", content: "You are a helpful assistant that finds grants. Provide 3 relevant grants with their titles and descriptions." },
@@ -22,9 +21,9 @@ export default async function handler(req, res) {
         temperature: 0.7,
       });
 
-      console.log('Raw OpenAI API response:', JSON.stringify(completion.data, null, 2));
+      console.log('Raw OpenAI API response:', JSON.stringify(completion, null, 2));
 
-      const content = completion.data.choices[0].message.content.trim();
+      const content = completion.choices[0].message.content.trim();
       const grants = content.split('\n\n').map((grant, index) => {
         const [title, ...descriptionParts] = grant.split('\n');
         return {
