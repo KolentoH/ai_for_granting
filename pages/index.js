@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Head from 'next/head';
-import { SearchIcon, PaperclipIcon, ArrowRightIcon } from '@heroicons/react/solid';
+import { MagnifyingGlassIcon as SearchIcon, PaperClipIcon, ArrowRightIcon } from '@heroicons/react/24/solid';
 
 export default function Home() {
   const [query, setQuery] = useState('');
