@@ -1,85 +1,49 @@
-// pages/index.js
-import { useState } from 'react';
-import Head from 'next/head';
-import { MagnifyingGlassIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { Configuration, OpenAIApi } from 'openai';
 
-export default function Home() {
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
+const configuration = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+const openai = new OpenAIApi(configuration);
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+export default async function handler(req, res) {
+  if (req.method === 'POST') {
+    const { query } = req.body;
+    console.log('Received query:', query);
+
     try {
-      const response = await fetch('/api/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query })
+      const completion = await openai.createChatCompletion({
+        model: "gpt-3.5-turbo",
+        messages: [
+          { role: "system", content: "You are a helpful assistant that finds grants. Provide 3 relevant grants with their titles and descriptions." },
+          { role: "user", content: `Find grants related to: ${query}` }
+        ],
+        max_tokens: 500,
+        n: 1,
+        temperature: 0.7,
       });
-      const data = await response.json();
-      if (response.ok) {
-        setResults(data.results);
-      } else {
-        throw new Error(data.error || 'An unknown error occurred');
-      }
+
+      console.log('Raw OpenAI API response:', JSON.stringify(completion.data, null, 2));
+
+      const content = completion.data.choices[0].message.content.trim();
+      const grants = content.split('\n\n').map((grant, index) => {
+        const [title, ...descriptionParts] = grant.split('\n');
+        return {
+          title: title.replace(/^\d+\.\s*/, '').trim() || `Grant ${index + 1}`,
+          description: descriptionParts.join('\n').trim() || 'No description available',
+          link: `https://example.com/grants/${encodeURIComponent(title.replace(/^\d+\.\s*/, '').trim() || `grant-${index + 1}`)}`
+        };
+      });
+
+      res.status(200).json({ results: grants });
     } catch (error) {
-      console.error('Error:', error);
-      alert(`An error occurred while searching: ${error.message}`);
+      console.error('Error details:', error);
+      if (error.response) {
+        console.error('OpenAI API error response:', error.response.data);
+      }
+      res.status(500).json({ error: 'An error occurred while processing your request.', details: error.message });
     }
-    setLoading(false);
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
-      <Head>
-        <title>AI Grants Search Engine</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
-      <main className="w-full max-w-2xl">
-        <h1 className="text-4xl font-bold mb-8 text-center text-gray-800">AI Grants Search Engine</h1>
-        
-        <form onSubmit={handleSearch} className="mb-8">
-          <div className="flex">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search for grants..."
-              className="flex-grow p-4 border border-gray-300 rounded-l-full focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <button 
-              type="submit" 
-              className="px-6 bg-blue-500 text-white rounded-r-full hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center"
-              disabled={loading}
-            >
-              {loading ? (
-                <SparklesIcon className="animate-pulse h-6 w-6" />
-              ) : (
-                <><MagnifyingGlassIcon className="h-6 w-6 mr-2" /> Search</>
-              )}
-            </button>
-          </div>
-        </form>
-
-        {results.length > 0 && (
-          <div>
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">Search Results</h2>
-            <ul className="space-y-4">
-              {results.map((result, index) => (
-                <li key={index} className="bg-white p-6 rounded-lg shadow-md">
-                  <h3 className="text-xl font-semibold text-blue-700">{result.title}</h3>
-                  <p className="mt-2 text-gray-600">{result.description}</p>
-                  <a href={result.link} className="mt-2 inline-block text-blue-500 hover:underline" target="_blank" rel="noopener noreferrer">
-                    Learn More
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </main>
-    </div>
-  );
+  } else {
+    res.setHeader('Allow', ['POST']);
+    res.status(405).end(`Method ${req.method} Not Allowed`);
+  }
 }
