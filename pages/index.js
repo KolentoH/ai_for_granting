@@ -62,7 +62,7 @@ export default function Home() {
           <div className="flex items-center mt-2 text-sm text-gray-600">
             <SearchIcon className="h-4 w-4 mr-1" />
             <span className="mr-4">Focus</span>
-            <PaperclipIcon className="h-4 w-4 mr-1" />
+            <PaperClipIcon className="h-4 w-4 mr-1" />
             <span>Attach</span>
           </div>
         </form>
