@@ -1,6 +1,7 @@
+// pages/index.js
 import { useState } from 'react';
 import Head from 'next/head';
-import { MagnifyingGlassIcon as SearchIcon, PaperClipIcon, ArrowRightIcon } from '@heroicons/react/24/solid';
+import { MagnifyingGlassIcon, SparklesIcon } from '@heroicons/react/24/outline';
 
 export default function Home() {
   const [query, setQuery] = useState('');
@@ -17,53 +18,48 @@ export default function Home() {
         body: JSON.stringify({ query })
       });
       const data = await response.json();
-      setResults(data.results);
+      if (response.ok) {
+        setResults(data.results);
+      } else {
+        throw new Error(data.error || 'An unknown error occurred');
+      }
     } catch (error) {
       console.error('Error:', error);
-      alert('An error occurred while searching. Please try again.');
+      alert(`An error occurred while searching: ${error.message}`);
     }
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
       <Head>
-        <title>Grants Search Engine</title>
+        <title>AI Grants Search Engine</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main className="max-w-3xl mx-auto px-4 py-20">
-        <h1 className="text-4xl font-bold mb-8 text-center text-gray-800">Grants Search Engine</h1>
+      <main className="w-full max-w-2xl">
+        <h1 className="text-4xl font-bold mb-8 text-center text-gray-800">AI Grants Search Engine</h1>
         
         <form onSubmit={handleSearch} className="mb-8">
-          <div className="relative">
+          <div className="flex">
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Ask anything..."
-              className="w-full p-4 pr-20 border border-gray-300 rounded-full shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Search for grants..."
+              className="flex-grow p-4 border border-gray-300 rounded-l-full focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <button 
               type="submit" 
-              className="absolute right-2 top-2 p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="px-6 bg-blue-500 text-white rounded-r-full hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center"
               disabled={loading}
             >
               {loading ? (
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
+                <SparklesIcon className="animate-pulse h-6 w-6" />
               ) : (
-                <ArrowRightIcon className="h-5 w-5" />
+                <><MagnifyingGlassIcon className="h-6 w-6 mr-2" /> Search</>
               )}
             </button>
-          </div>
-          <div className="flex items-center mt-2 text-sm text-gray-600">
-            <SearchIcon className="h-4 w-4 mr-1" />
-            <span className="mr-4">Focus</span>
-            <PaperClipIcon className="h-4 w-4 mr-1" />
-            <span>Attach</span>
           </div>
         </form>
 
@@ -87,4 +83,3 @@ export default function Home() {
     </div>
   );
 }
-
